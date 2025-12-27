@@ -1,14 +1,160 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+}
+
+
+enum UserRole {
+  MANAGER
+  EMPLOYEE
+  TECHNICIAN
+  ADMIN
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  SCRAPPED
+}
+
+enum RequestType {
+  CORRECTIVE
+  PREVENTIVE
+}
+
+enum RequestStatus {
+  NEW
+  IN_PROGRESS
+  REPAIRED
+  SCRAP
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Department {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  users       User[]
+  equipment   Equipment[]
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  passwordHash   String
+  role           UserRole
+  avatarUrl      String?
+  createdAt      DateTime  @default(now())
+
+  departmentId   Int
+  department     Department @relation(fields: [departmentId], references: [id])
+
+  teamMembers    TeamMember[]
+  ownedEquipment Equipment[] @relation("EquipmentOwner")
+  assignedTasks  MaintenanceRequest[] @relation("AssignedTechnician")
+  createdTasks   MaintenanceRequest[] @relation("CreatedBy")
+  statusLogs     RequestStatusLog[]
+}
+
+model MaintenanceTeam {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  members     TeamMember[]
+  equipment   Equipment[]
+  requests    MaintenanceRequest[]
+}
+
+model TeamMember {
+  id       Int @id @default(autoincrement())
+
+  userId   Int
+  teamId   Int
+
+  user     User            @relation(fields: [userId], references: [id])
+  team     MaintenanceTeam @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+}
+
+model Equipment {
+  id                  Int              @id @default(autoincrement())
+  name                String
+  serialNumber        String           @unique
+  category            String
+  purchaseDate        DateTime?
+  warrantyExpiry      DateTime?
+  location            String
+  status              EquipmentStatus  @default(ACTIVE)
+  createdAt           DateTime         @default(now())
+
+  departmentId        Int
+  assignedUserId      Int?
+  maintenanceTeamId   Int
+
+  department          Department       @relation(fields: [departmentId], references: [id])
+  assignedUser        User?             @relation("EquipmentOwner", fields: [assignedUserId], references: [id])
+  maintenanceTeam     MaintenanceTeam   @relation(fields: [maintenanceTeamId], references: [id])
+
+  requests            MaintenanceRequest[]
+  logs                EquipmentLog[]
+}
+
+model MaintenanceRequest {
+  id              Int            @id @default(autoincrement())
+  subject         String
+  description     String
+  requestType     RequestType
+  status          RequestStatus  @default(NEW)
+  priority        Priority
+  scheduledDate   DateTime?
+  durationHours   Float?
+  isOverdue       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  equipmentId     Int
+  teamId          Int
+  assignedToId    Int?
+  createdById     Int
+
+  equipment       Equipment       @relation(fields: [equipmentId], references: [id])
+  team            MaintenanceTeam @relation(fields: [teamId], references: [id])
+  assignedTo      User?           @relation("AssignedTechnician", fields: [assignedToId], references: [id])
+  createdBy       User            @relation("CreatedBy", fields: [createdById], references: [id])
+
+  statusLogs      RequestStatusLog[]
+}
+
+model RequestStatusLog {
+  id          Int           @id @default(autoincrement())
+  fromStatus  RequestStatus
+  toStatus    RequestStatus
+  changedAt   DateTime      @default(now())
+
+  requestId  Int
+  changedById Int
+
+  request    MaintenanceRequest @relation(fields: [requestId], references: [id])
+  changedBy  User               @relation(fields: [changedById], references: [id])
+}
+
+model EquipmentLog {
+  id          Int      @id @default(autoincrement())
+  note        String
+  createdAt  DateTime @default(now())
+
+  equipmentId Int
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
 }
