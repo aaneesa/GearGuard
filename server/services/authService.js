@@ -3,7 +3,8 @@ const prisma = require("../prisma/client");
 const { createToken } = require("../utils/jwt");
 
 const registerUser = async (data) => {
-  const { name, email, password, role } = data;
+  const { name, email, password, role, departmentName } = data;
+
 
   const existingUser = await prisma.user.findUnique({
     where: { email }
@@ -19,10 +20,17 @@ const registerUser = async (data) => {
     data: {
       name,
       email,
-      password: hashedPassword,
-      role
+      passwordHash: hashedPassword,
+      role,
+      department: {
+        connectOrCreate: {
+          where: { name: departmentName }, // look for existing department
+          create: { name: departmentName } // create if it doesn't exist
+        }
+      }
     }
   });
+
 
   return user;
 };
@@ -36,7 +44,7 @@ const loginUser = async (email, password) => {
     throw new Error("Invalid credentials");
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
 
   if (!isMatch) {
     throw new Error("Invalid credentials");
