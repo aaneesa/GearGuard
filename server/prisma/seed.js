@@ -1,4 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcrypt");
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -20,56 +22,64 @@ async function main() {
   const bioDept = await prisma.department.findUnique({ where: { name: "Biomedical" } });
 
   /**
-   * 2. Users (7 total)
+   * 2. Hash passwords
+   */
+  const adminHash = await bcrypt.hash("admin123", 10);
+  const managerHash = await bcrypt.hash("manager123", 10);
+  const techHash = await bcrypt.hash("tech123", 10);
+  const employeeHash = await bcrypt.hash("employee123", 10);
+
+  /**
+   * 3. Users
    */
   await prisma.user.createMany({
     data: [
       {
         name: "Admin User",
         email: "admin@gearguard.com",
-        passwordHash: "hashed_admin_password",
+        passwordHash: adminHash,
         role: "ADMIN",
         departmentId: itDept.id
       },
       {
         name: "Manager Alice",
         email: "alice.manager@gearguard.com",
-        passwordHash: "hashed_manager_password",
+        passwordHash: managerHash,
         role: "MANAGER",
         departmentId: bioDept.id
       },
       {
         name: "Tech John",
         email: "tech.john@gearguard.com",
-        passwordHash: "hashed_tech_password",
+        passwordHash: techHash,
         role: "TECHNICIAN",
         departmentId: bioDept.id
       },
       {
         name: "Tech Sarah",
         email: "tech.sarah@gearguard.com",
-        passwordHash: "hashed_tech_password",
+        passwordHash: techHash,
         role: "TECHNICIAN",
         departmentId: bioDept.id
       },
       {
         name: "Tech Mike",
         email: "tech.mike@gearguard.com",
-        passwordHash: "hashed_tech_password",
+        passwordHash: techHash,
         role: "TECHNICIAN",
         departmentId: bioDept.id
       },
       {
         name: "Tech Priya",
         email: "tech.priya@gearguard.com",
-        passwordHash: "hashed_tech_password",
+        passwordHash: techHash,
         role: "TECHNICIAN",
         departmentId: bioDept.id
       },
       {
         name: "Ops Bob",
         email: "bob.ops@gearguard.com",
-        passwordHash: "hashed_ops_password",
+        passwordHash: employeeHash,
         role: "EMPLOYEE",
         departmentId: itDept.id
       }
@@ -77,7 +87,9 @@ async function main() {
     skipDuplicates: true
   });
 
-  // Fetch users
+  /**
+   * 4. Fetch users
+   */
   const admin = await prisma.user.findUnique({ where: { email: "admin@gearguard.com" } });
   const manager = await prisma.user.findUnique({ where: { email: "alice.manager@gearguard.com" } });
   const techJohn = await prisma.user.findUnique({ where: { email: "tech.john@gearguard.com" } });
@@ -87,7 +99,7 @@ async function main() {
   const opsBob = await prisma.user.findUnique({ where: { email: "bob.ops@gearguard.com" } });
 
   /**
-   * 3. Maintenance Teams
+   * 5. Maintenance Teams
    */
   await prisma.maintenanceTeam.createMany({
     data: [
@@ -100,31 +112,30 @@ async function main() {
   const electricalTeam = await prisma.maintenanceTeam.findUnique({
     where: { name: "Electrical Team" }
   });
+
   const mechanicalTeam = await prisma.maintenanceTeam.findUnique({
     where: { name: "Mechanical Team" }
   });
 
   /**
-   * 4. Team Members (NOW 7 MEMBERS)
+   * 6. Team Members
    */
   await prisma.teamMember.createMany({
     data: [
-      // Electrical Team (4 members)
       { userId: techJohn.id, teamId: electricalTeam.id },
       { userId: techSarah.id, teamId: electricalTeam.id },
       { userId: techMike.id, teamId: electricalTeam.id },
       { userId: opsBob.id, teamId: electricalTeam.id },
 
-      // Mechanical Team (3 members)
-      { userId: manager.id, teamId: mechanicalTeam.id },
       { userId: admin.id, teamId: mechanicalTeam.id },
+      { userId: manager.id, teamId: mechanicalTeam.id },
       { userId: techPriya.id, teamId: mechanicalTeam.id }
     ],
     skipDuplicates: true
   });
 
   /**
-   * 5. Equipment
+   * 7. Equipment
    */
   await prisma.equipment.createMany({
     data: [

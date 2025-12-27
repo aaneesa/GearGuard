@@ -2,12 +2,28 @@ const service = require("../services/teamMember.service");
 
 const add = async (req, res) => {
   try {
-    const { userId, teamId } = req.body;
-    if (!userId || !teamId) {
-      return res.status(400).json({ error: "userId and teamId are required" });
+    const { teamId } = req.body;
+    const user = req.user; // <-- MUST get logged-in user from JWT
+
+    // Validation
+    if (!teamId) {
+      return res.status(400).json({ error: "teamId is required" });
     }
-    const member = await service.addMember(userId, teamId);
-    res.status(201).json(member);
+
+    // Only technicians can join maintenance teams
+    if (user.role !== "TECHNICIAN") {
+      return res.status(403).json({
+        error: "Only technicians can join maintenance teams"
+      });
+    }
+
+    // Call service to add the technician
+    const member = await service.addMember(user.id, teamId);
+
+    res.status(201).json({
+      message: "Successfully joined maintenance team",
+      member
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
