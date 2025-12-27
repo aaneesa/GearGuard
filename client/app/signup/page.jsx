@@ -110,7 +110,7 @@ export default function SignupPage() {
               setForm({ ...form, role: e.target.value })
             }
           >
-            <option value="USER">ADMIN</option>
+            <option value="ADMIN">ADMIN</option>
             <option value="MANAGER">MANAGER</option>
             <option value="TECHNICIAN">TECHNICIAN</option>
             <option value="EMPLOYEE">EMPLOYEE</option>
