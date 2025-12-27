@@ -3,11 +3,12 @@ const prisma = require("../prisma/client");
 const { createToken } = require("../utils/jwt");
 
 const registerUser = async (data) => {
-  const { name, email, password, role, departmentName } = data;
+  let { name, email, password, role, departmentName, avatarUrl } = data;
 
+  email = email.toLowerCase();
 
   const existingUser = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (existingUser) {
@@ -21,19 +22,22 @@ const registerUser = async (data) => {
       name,
       email,
       passwordHash: hashedPassword,
-      role,
+      role: role === "ADMIN" ? "USER" : role,
+      avatarUrl:
+        avatarUrl ||
+        `https://api.dicebear.com/7.x/initials/svg?seed=${name}`,
       department: {
         connectOrCreate: {
-          where: { name: departmentName }, // look for existing department
-          create: { name: departmentName } // create if it doesn't exist
-        }
-      }
-    }
+          where: { name: departmentName || "General" },
+          create: { name: departmentName || "General" },
+        },
+      },
+    },
   });
-
 
   return user;
 };
+
 
 const loginUser = async (email, password) => {
   const user = await prisma.user.findUnique({
