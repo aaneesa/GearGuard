@@ -8,9 +8,6 @@ datasource db {
 }
 
 
-
-
-
 enum UserRole {
   MANAGER
   EMPLOYEE
