@@ -4,8 +4,10 @@ const express = require("express");
 const cors = require("cors");
 
 const authRoutes = require("./routes/authRoutes");
+const maintenanceTeamRoutes = require("./routes/maintenanceTeamRoutes");
+const teamMemberRoutes = require("./routes/teamMember.routes");
+const requestRoutes = require("./routes/request.routes");
 const equipmentRoutes = require("./routes/equipment.routes");
-const maintenanceTeamRoutes = require("./routes/maintenanceTeam.routes");
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/equipments", equipmentRoutes);
 app.use("/api/maintenance-teams", maintenanceTeamRoutes);
+app.use("/api/team-members", teamMemberRoutes);
+app.use("/api/requests", requestRoutes);
 
 
 app.get("/", (req, res) => {
